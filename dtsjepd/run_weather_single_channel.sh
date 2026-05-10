@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Sweep settings
-LRS=("1e-3" "1e-4" "1e-5" "1e-6")
+LRS=("1e-4" "1e-5" "1e-6" "1e-3")
 EMA_DECAYS=("0.998" "0.999" "0.9995")
 LAMBDA_DENOISES=("0.01" "0.1" "0")
 
@@ -14,7 +14,7 @@ NUM_EPOCHS="5001"
 WARMUP_EPOCHS="50"
 RATIO_PATCHES="10"
 PATCH_SIZE="32"
-STRIDE="1"
+STRIDE="4"
 MASK_RATIO="0.4"
 EVAL_EVERY="10"
 CHECKPOINT_SAVE="5000"
