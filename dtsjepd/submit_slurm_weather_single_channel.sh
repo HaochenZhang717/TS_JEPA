@@ -5,9 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SLURM_SCRIPT="${SCRIPT_DIR}/slurm_weather_single_channel.sh"
 
 # Sweep settings
-#LRS=("1e-4" "1e-5" "1e-6" "1e-3")
-#EMA_DECAYS=("0.998" "0.999" "0.9995")
-#LAMBDA_DENOISES=("0.01" "0.1" "0")
+LRS=("1e-4" "1e-5" "1e-6")
+EMA_DECAYS=("0.998" "0.999" "0.9995")
+LAMBDA_DENOISES=("0.01" "0.1" "0")
 
 
 LRS=("1e-5")
