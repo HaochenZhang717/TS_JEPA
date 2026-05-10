@@ -23,6 +23,7 @@ def prepare_args(config):
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default="uniform_uni_data")
     parser.add_argument("--notes", type=str, default="")
+    parser.add_argument("--save_suffix", type=str, default="")
     parser.add_argument("--name_model", type=str, default="pre_train")
 
     parser.add_argument("--lr", type=float, default=config["lr"])
@@ -144,6 +145,7 @@ def prepare_args(config):
     config["pretrain_decoder_num_layers"] = args.pretrain_decoder_num_layers
 
     config["notes"] = args.notes
+    config["save_suffix"] = args.save_suffix
 
     config["path_save"] = "./logs/output_model/" + args.data
 
@@ -250,6 +252,9 @@ def prepare_args_pretrain(config):
         + "_"
         + str(config["predictor_num_layers"])
     )
+
+    if config["save_suffix"]:
+        config["path_save"] = config["path_save"] + "_" + config["save_suffix"]
 
     return config
 

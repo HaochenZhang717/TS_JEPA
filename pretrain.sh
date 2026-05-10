@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # Sweep settings
-#LRS=("1e-4" "5e-5" "1e-5")
+LRS=("5e-5" "1e-5" "1e-6")
 #EMA_DECAYS=("0.995" "0.998" "0.999")
-LRS=("1e-7")
+#LRS=("1e-7")
 EMA_DECAYS=("0.998")
 
 # Shared training settings
@@ -22,8 +22,9 @@ WANDB_PROJECT="TS_JEPA"
 
 for LR in "${LRS[@]}"; do
   for EMA in "${EMA_DECAYS[@]}"; do
+    RUN_TAG="lr${LR}_ema${EMA}_$(date +%Y%m%d_%H%M%S)"
     echo "============================================================"
-    echo "Starting run with lr=${LR}, ema_momentum=${EMA}"
+    echo "Starting run with lr=${LR}, ema_momentum=${EMA}, tag=${RUN_TAG}"
     echo "============================================================"
 
     python pretrain.py \
@@ -39,6 +40,7 @@ for LR in "${LRS[@]}"; do
       --predictor_embed "${PRED_EMBED_DIM}" \
       --predictor_nhead "${PRED_NHEAD}" \
       --predictor_num_layers "${PRED_NUM_LAYERS}" \
+      --save_suffix "${RUN_TAG}" \
       --log_wandb \
       --wandb_project_name "${WANDB_PROJECT}"
   done
