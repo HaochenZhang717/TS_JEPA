@@ -10,10 +10,6 @@ EMA_DECAYS=("0.998" "0.999" "0.9995")
 LAMBDA_DENOISES=("0.01" "0.1" "0")
 
 
-LRS=("1e-5")
-EMA_DECAYS=("0.999")
-LAMBDA_DENOISES=("0.01")
-
 # Shared training settings
 DATA="weather"
 INPUT_COLS="OT"
