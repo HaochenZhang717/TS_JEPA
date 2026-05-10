@@ -71,8 +71,14 @@ if __name__ == "__main__":
             project=config["wandb_project_name"],
             config=config,
             name=(
-                f"{config['data']}_lr{config['lr']}_m{config['ema_momentum']}"
+                f"{config['data']}"
+                f"_lr{config['lr']}"
+                f"_bs{config['batch_size']}"
+                f"_m{config['ema_momentum']}"
                 f"_mask{config['mask_ratio']}"
+                f"_rp{config['ratio_patches']}"
+                f"_enc{config['encoder_embed_dim']}-{config['encoder_nhead']}-{config['encoder_num_layers']}"
+                f"_pred{config['predictor_embed']}-{config['predictor_nhead']}-{config['predictor_num_layers']}"
             ),
         )
 
