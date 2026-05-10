@@ -166,6 +166,10 @@ def prepare_args_pretrain(config):
     parser.add_argument("--ema_momentum", type=float, default=config["ema_momentum"])
     parser.add_argument("--ratio_patches", type=int, default=config["ratio_patches"])
     parser.add_argument("--notes", type=str, default="")
+    parser.add_argument("--log_wandb", action="store_true")
+    parser.add_argument(
+        "--wandb_project_name", type=str, default=config["wandb_project_name"]
+    )
 
     # Encoder
     parser.add_argument(
@@ -205,7 +209,11 @@ def prepare_args_pretrain(config):
 
     config["notes"] = args.notes
 
-    config["wandb_project_name"] = args.data + "_pretrain"
+    config["log_wandb"] = args.log_wandb
+    if args.wandb_project_name:
+        config["wandb_project_name"] = args.wandb_project_name
+    else:
+        config["wandb_project_name"] = args.data + "_pretrain"
 
     # Encoder
     config["encoder_embed_dim"] = args.encoder_embed_dim

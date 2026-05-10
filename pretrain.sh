@@ -1,0 +1,15 @@
+python pretrain.py \
+  --data weather \
+  --batch_size 32 \
+  --lr 1e-4 \
+  --ema_momentum 0.998 \
+  --ratio_patches 10 \
+  --mask_ratio 0.7 \
+  --encoder_embed_dim 128 \
+  --encoder_nhead 2 \
+  --encoder_num_layers 1 \
+  --predictor_embed 128 \
+  --predictor_nhead 2 \
+  --predictor_num_layers 1 \
+  --log_wandb \
+  --wandb_project_name TS_JEPA

@@ -57,6 +57,24 @@ if __name__ == "__main__":
 
     # Init config and args
     config = prepare_args_pretrain(config)
+    wandb_run = None
+    if config["log_wandb"]:
+        try:
+            import wandb
+        except ImportError:
+            raise ImportError(
+                "Weights & Biases logging is enabled but wandb is not installed. "
+                "Install it with `pip install wandb`."
+            )
+
+        wandb_run = wandb.init(
+            project=config["wandb_project_name"],
+            config=config,
+            name=(
+                f"{config['data']}_lr{config['lr']}_m{config['ema_momentum']}"
+                f"_mask{config['mask_ratio']}"
+            ),
+        )
 
     # Load Data
     loader = get_jepa_loaders(
@@ -142,10 +160,12 @@ if __name__ == "__main__":
 
     # Training loop
     for epoch in range(config["num_epochs"]):
+        epoch_start = time.time()
         scheduler.step()
         m = next(ema_scheduler)
         encoder.train()
         predictor.train()
+        total_loss = 0.0
 
         for patches, masks, non_masks in loader:
             optimizer.zero_grad()
@@ -190,6 +210,20 @@ if __name__ == "__main__":
                 f"Epoch {epoch}, lr: {optimizer.param_groups[0]['lr']:.3g} - JEPA Loss: {total_loss:.4f},"
             )
 
+        if wandb_run is not None:
+            wandb.log(
+                {
+                    "epoch": epoch,
+                    "train/jepa_loss": total_loss.item(),
+                    "train/lr": optimizer.param_groups[0]["lr"],
+                    "train/ema_momentum": m,
+                    "train/epoch_time_sec": time.time() - epoch_start,
+                }
+            )
+
         # Save model's checkpoint
         if epoch % checkpoint_save == 0 and epoch != 0:
             save_model(encoder, epoch)
+
+    if wandb_run is not None:
+        wandb.finish()
