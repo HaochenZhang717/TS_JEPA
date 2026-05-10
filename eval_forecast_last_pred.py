@@ -100,11 +100,15 @@ if __name__ == "__main__":
         + str(config["checkpoint_to_use"])
     )
 
-    name_loader = torch.load(
-        config["path_save"] + path_name + ".pt", map_location=torch.device("cpu")
-    )["encoder"]
+    checkpoint_path = config.get("checkpoint_path", "")
+    if checkpoint_path:
+        ckpt_to_load = checkpoint_path
+    else:
+        ckpt_to_load = config["path_save"] + path_name + ".pt"
+
+    name_loader = torch.load(ckpt_to_load, map_location=torch.device("cpu"))["encoder"]
     encoder.load_state_dict(name_loader)
-    print("Model loaded")
+    print("Model loaded from: {}".format(ckpt_to_load))
 
     # We consider training only the decoder head
     param_groups = [{"params": (p for n, p in decoder.named_parameters())}]

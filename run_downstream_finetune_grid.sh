@@ -81,6 +81,7 @@ for ckpt_path in "${CKPT_FILES[@]}"; do
       --data "${DATA}" \
       --batch_size "${BATCH_SIZE}" \
       --lr "${DOWNSTREAM_LR}" \
+      --checkpoint_path "${ckpt_path}" \
       --lr_pretrain "${lr_pretrain}" \
       --mask_ratio "${mask_ratio}" \
       --ema_pretrain "${ema_pretrain}" \
