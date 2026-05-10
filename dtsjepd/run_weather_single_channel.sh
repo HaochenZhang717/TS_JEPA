@@ -9,7 +9,7 @@ LAMBDA_DENOISES=("0.01" "0.05" "0.1 ”0")
 # Shared training settings
 DATA="weather"
 INPUT_COLS="OT"
-BATCH_SIZE="32"
+BATCH_SIZE="128"
 NUM_EPOCHS="5001"
 RATIO_PATCHES="10"
 PATCH_SIZE="32"
