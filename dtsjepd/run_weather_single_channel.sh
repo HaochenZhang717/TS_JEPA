@@ -2,15 +2,16 @@
 set -euo pipefail
 
 # Sweep settings
-LRS=("1e-3" "1e-4" "5e-5" "1e-5" "1e-6")
-EMA_DECAYS=("0.995" "0.998" "0.999")
-LAMBDA_DENOISES=("0.01" "0.05" "0.1 ”0")
+LRS=("1e-3" "1e-4" "1e-5" "1e-6")
+EMA_DECAYS=("0.998" "0.999" "0.9995")
+LAMBDA_DENOISES=("0.01" "0.1" "0")
 
 # Shared training settings
 DATA="weather"
 INPUT_COLS="OT"
 BATCH_SIZE="128"
 NUM_EPOCHS="5001"
+WARMUP_EPOCHS="250"
 RATIO_PATCHES="10"
 PATCH_SIZE="32"
 STRIDE="1"
@@ -48,6 +49,7 @@ for LR in "${LRS[@]}"; do
         --input_cols "${INPUT_COLS}" \
         --batch_size "${BATCH_SIZE}" \
         --num_epochs "${NUM_EPOCHS}" \
+        --warmup_epochs "${WARMUP_EPOCHS}" \
         --lr "${LR}" \
         --ema_momentum "${EMA}" \
         --ratio_patches "${RATIO_PATCHES}" \

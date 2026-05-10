@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn.functional as F
-import torch.optim.lr_scheduler as lr_scheduler
+from torch.optim.lr_scheduler import LambdaLR
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -37,6 +37,7 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--num_epochs", type=int, default=5001)
     parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--warmup_epochs", type=int, default=0)
     parser.add_argument("--ema_momentum", type=float, default=0.998)
     parser.add_argument("--mask_ratio", type=float, default=0.7)
     parser.add_argument("--ratio_patches", type=int, default=10)
@@ -116,6 +117,16 @@ def make_path_save(args, num_channels):
     if args.save_suffix:
         path = path + "_" + args.save_suffix
     return path
+
+
+def build_warmup_constant_scheduler(optimizer, warmup_epochs):
+    if warmup_epochs <= 0:
+        return LambdaLR(optimizer, lr_lambda=lambda _: 1.0)
+
+    def lr_lambda(epoch):
+        return min(1.0, float(epoch + 1) / float(warmup_epochs))
+
+    return LambdaLR(optimizer, lr_lambda=lr_lambda)
 
 
 def save_checkpoint(path_save, epoch, encoder, predictor, denoising_head, args, metadata):
@@ -313,9 +324,7 @@ def main():
         ],
         lr=args.lr,
     )
-    scheduler = lr_scheduler.LinearLR(
-        optimizer, start_factor=1.0, end_factor=0.5, total_iters=args.num_epochs
-    )
+    scheduler = build_warmup_constant_scheduler(optimizer, args.warmup_epochs)
 
     metadata = {
         "selected_cols": data_meta["selected_cols"],
@@ -352,6 +361,7 @@ def main():
 
     for epoch in range(args.num_epochs):
         epoch_start = time.time()
+        current_lr = optimizer.param_groups[0]["lr"]
         train_stats = run_epoch(
             train_loader,
             encoder,
@@ -362,7 +372,6 @@ def main():
             device,
             optimizer=optimizer,
         )
-        scheduler.step()
 
         log_dict = {
             "epoch": epoch,
@@ -376,7 +385,7 @@ def main():
                 * train_stats["denoise_loss"]
                 / max(train_stats["jepa_loss"], 1e-12)
             ),
-            "train/lr": optimizer.param_groups[0]["lr"],
+            "train/lr": current_lr,
             "train/ema_momentum": args.ema_momentum,
             "train/lambda_denoise": args.lambda_denoise,
             "train/epoch_time_sec": time.time() - epoch_start,
@@ -422,7 +431,7 @@ def main():
 
         if epoch % 10 == 0:
             print(
-                f"Epoch {epoch}, lr: {optimizer.param_groups[0]['lr']:.3g} "
+                f"Epoch {epoch}, lr: {current_lr:.3g} "
                 f"- total: {train_stats['total_loss']:.4f}, "
                 f"jepa: {train_stats['jepa_loss']:.4f}, "
                 f"denoise: {train_stats['denoise_loss']:.4f}"
@@ -437,6 +446,8 @@ def main():
             save_checkpoint(
                 path_save, epoch, encoder, predictor, denoising_head, args, metadata
             )
+
+        scheduler.step()
 
     if wandb_run is not None:
         wandb.finish()
