@@ -3,9 +3,9 @@ set -euo pipefail
 
 # Sweep settings
 LRS=("5e-5" "1e-5" "1e-6")
-#EMA_DECAYS=("0.995" "0.998" "0.999")
+EMA_DECAYS=("0.995" "0.998" "0.999")
 #LRS=("1e-7")
-EMA_DECAYS=("0.998")
+#EMA_DECAYS=("0.998")
 
 
 # Shared training settings
