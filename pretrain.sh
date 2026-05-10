@@ -7,6 +7,7 @@ LRS=("5e-5" "1e-5" "1e-6")
 #LRS=("1e-7")
 EMA_DECAYS=("0.998")
 
+
 # Shared training settings
 DATA="weather"
 BATCH_SIZE="32"
