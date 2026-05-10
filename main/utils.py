@@ -168,6 +168,9 @@ def prepare_args_pretrain(config):
     parser.add_argument("--ema_momentum", type=float, default=config["ema_momentum"])
     parser.add_argument("--ratio_patches", type=int, default=config["ratio_patches"])
     parser.add_argument("--notes", type=str, default="")
+    parser.add_argument("--save_suffix", type=str, default="")
+    parser.add_argument("--num_epochs", type=int, default=config["num_epochs"])
+    parser.add_argument("--checkpoint_save", type=int, default=config["checkpoint_save"])
     parser.add_argument("--log_wandb", action="store_true")
     parser.add_argument(
         "--wandb_project_name", type=str, default=config["wandb_project_name"]
@@ -203,6 +206,8 @@ def prepare_args_pretrain(config):
     config["batch_size"] = args.batch_size
     config["ema_momentum"] = args.ema_momentum
     config["ratio_patches"] = args.ratio_patches
+    config["num_epochs"] = args.num_epochs
+    config["checkpoint_save"] = args.checkpoint_save
     config["data"] = args.data
 
     config["seed"] = seed
@@ -210,6 +215,7 @@ def prepare_args_pretrain(config):
     config["path_data"] = "./data/" + args.data + "/" + args.data + ".csv"
 
     config["notes"] = args.notes
+    config["save_suffix"] = args.save_suffix
 
     config["log_wandb"] = args.log_wandb
     if args.wandb_project_name:

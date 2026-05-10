@@ -8,6 +8,7 @@ warnings.filterwarnings("ignore")
 
 import time
 import copy
+import os
 import torch
 import torch.nn.functional as F
 import torch.optim.lr_scheduler as lr_scheduler
@@ -36,9 +37,10 @@ def save_model(model, epoch):
 
     try:
         path_name = path_save + "_epoch_" + str(epoch) + ".pt"
+        os.makedirs(os.path.dirname(path_name), exist_ok=True)
         torch.save(save_dict, path_name)
-    except:
-        print("Problem saving checkpoint")
+    except Exception as exc:
+        print(f"Problem saving checkpoint: {exc}")
 
 
 # Define the custom learning rate schedule
