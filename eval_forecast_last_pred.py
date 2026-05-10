@@ -12,6 +12,7 @@ import copy
 import logging
 import argparse
 import pickle
+import os
 
 from main.utils import prepare_args
 from main.utils import mse, mae, _reduce
@@ -142,6 +143,7 @@ if __name__ == "__main__":
     num_steps = (len(loader.dataset.test_df[context * num_patches :])) // context
 
     predictions = []
+    targets = []
     total_diff = 0
     l_val_mse = []
     l_val_mae = []
@@ -178,6 +180,40 @@ if __name__ == "__main__":
 
         l_val_mse.append(val_mse)
         l_val_mae.append(val_mae)
+        predictions.append(predicted_next_patch.flatten().detach().numpy())
+        targets.append(target_value.numpy())
 
-    print("MSE Loss is: {}".format(np.mean(val_mse)))
+    print("MSE Loss is: {}".format(np.mean(l_val_mse)))
     print("MAE Loss is: {}".format(np.mean(l_val_mae)))
+
+    if config.get("plot_path", ""):
+        plot_num_steps = min(config.get("plot_num_steps", 20), len(predictions))
+        y_pred = np.concatenate(predictions[:plot_num_steps])
+        y_true = np.concatenate(targets[:plot_num_steps])
+
+        try:
+            import matplotlib
+
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+
+            os.makedirs(os.path.dirname(config["plot_path"]), exist_ok=True)
+            plt.figure(figsize=(14, 5))
+            plt.plot(y_true, label="Target", linewidth=2)
+            plt.plot(y_pred, label="Prediction", linewidth=2, alpha=0.85)
+            plt.title(
+                "Forecast comparison | lr_pretrain={} ema={} checkpoint={}".format(
+                    config["lr_pretrain"],
+                    config["ema_pretrain"],
+                    config["checkpoint_to_use"],
+                )
+            )
+            plt.xlabel("Forecast horizon index")
+            plt.ylabel("Value")
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(config["plot_path"], dpi=160)
+            plt.close()
+            print("Saved prediction plot to: {}".format(config["plot_path"]))
+        except ImportError:
+            print("matplotlib is not installed; skip prediction plot.")

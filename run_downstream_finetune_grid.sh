@@ -13,7 +13,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TS="$(date +%Y%m%d_%H%M%S)"
 OUT_DIR="${ROOT_DIR}/logs/downstream_from_pretrain_${TS}"
+PLOT_DIR="${OUT_DIR}/plots"
 mkdir -p "${OUT_DIR}"
+mkdir -p "${PLOT_DIR}"
 
 DATA="${DATA:-weather}"
 BATCH_SIZE="${BATCH_SIZE:-32}"
@@ -22,6 +24,7 @@ PRETRAIN_ENCODER_KERNEL_SIZE="${PRETRAIN_ENCODER_KERNEL_SIZE:-3}"
 # Fixed downstream finetune params (no tuning).
 DOWNSTREAM_LR="${DOWNSTREAM_LR:-1e-04}"
 CHECKPOINT_TO_USE="${CHECKPOINT_TO_USE:-5000}"
+PLOT_NUM_STEPS="${PLOT_NUM_STEPS:-20}"
 
 CKPT_DIR="${ROOT_DIR}/logs/output_model/${DATA}"
 if [[ ! -d "${CKPT_DIR}" ]]; then
@@ -30,7 +33,7 @@ if [[ ! -d "${CKPT_DIR}" ]]; then
 fi
 
 SUMMARY_CSV="${OUT_DIR}/summary.csv"
-printf "run_id,status,data,batch_size,lr,lr_pretrain,mask_ratio,ema_pretrain,ratio_patches,checkpoint_to_use,enc_dim,enc_head,enc_layer,enc_kernel,dec_dim,dec_head,dec_layer,checkpoint_file,mse,mae,log_file\n" > "${SUMMARY_CSV}"
+printf "run_id,status,data,batch_size,lr,lr_pretrain,mask_ratio,ema_pretrain,ratio_patches,checkpoint_to_use,enc_dim,enc_head,enc_layer,enc_kernel,dec_dim,dec_head,dec_layer,checkpoint_file,mse,mae,log_file,plot_file\n" > "${SUMMARY_CSV}"
 
 shopt -s nullglob
 CKPT_FILES=("${CKPT_DIR}"/*"_epoch_${CHECKPOINT_TO_USE}.pt")
@@ -68,6 +71,7 @@ for ckpt_path in "${CKPT_FILES[@]}"; do
     run_id=$((run_id + 1))
     run_tag="run$(printf '%04d' "${run_id}")_prelr_${lr_pretrain}_ema_${ema_pretrain}_ep_${checkpoint_to_use}"
     log_file="${OUT_DIR}/${run_tag}.log"
+    plot_file="${PLOT_DIR}/${run_tag}.png"
 
     echo "======================================================"
     echo "[${run_tag}] Running downstream finetune/eval"
@@ -82,6 +86,8 @@ for ckpt_path in "${CKPT_FILES[@]}"; do
       --batch_size "${BATCH_SIZE}" \
       --lr "${DOWNSTREAM_LR}" \
       --checkpoint_path "${ckpt_path}" \
+      --plot_path "${plot_file}" \
+      --plot_num_steps "${PLOT_NUM_STEPS}" \
       --lr_pretrain "${lr_pretrain}" \
       --mask_ratio "${mask_ratio}" \
       --ema_pretrain "${ema_pretrain}" \
@@ -100,10 +106,10 @@ for ckpt_path in "${CKPT_FILES[@]}"; do
 
     if [[ ${status} -ne 0 ]]; then
       echo "[WARN] Failed run: ${run_tag}, check ${log_file}"
-      printf "%s,FAILED,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NA,NA,%s\n" \
+      printf "%s,FAILED,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NA,NA,%s,%s\n" \
         "${run_tag}" "${DATA}" "${BATCH_SIZE}" "${DOWNSTREAM_LR}" "${lr_pretrain}" "${mask_ratio}" "${ema_pretrain}" \
         "${ratio_patches}" "${checkpoint_to_use}" "${enc_dim}" "${enc_head}" "${enc_layer}" \
-        "${PRETRAIN_ENCODER_KERNEL_SIZE}" "${dec_dim}" "${dec_head}" "${dec_layer}" "${ckpt_file}" "${log_file}" >> "${SUMMARY_CSV}"
+        "${PRETRAIN_ENCODER_KERNEL_SIZE}" "${dec_dim}" "${dec_head}" "${dec_layer}" "${ckpt_file}" "${log_file}" "${plot_file}" >> "${SUMMARY_CSV}"
       continue
     fi
 
@@ -113,10 +119,10 @@ for ckpt_path in "${CKPT_FILES[@]}"; do
     mse="${mse:-NA}"
     mae="${mae:-NA}"
 
-    printf "%s,OK,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
+    printf "%s,OK,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" \
       "${run_tag}" "${DATA}" "${BATCH_SIZE}" "${DOWNSTREAM_LR}" "${lr_pretrain}" "${mask_ratio}" "${ema_pretrain}" \
       "${ratio_patches}" "${checkpoint_to_use}" "${enc_dim}" "${enc_head}" "${enc_layer}" \
-      "${PRETRAIN_ENCODER_KERNEL_SIZE}" "${dec_dim}" "${dec_head}" "${dec_layer}" "${ckpt_file}" "${mse}" "${mae}" "${log_file}" >> "${SUMMARY_CSV}"
+      "${PRETRAIN_ENCODER_KERNEL_SIZE}" "${dec_dim}" "${dec_head}" "${dec_layer}" "${ckpt_file}" "${mse}" "${mae}" "${log_file}" "${plot_file}" >> "${SUMMARY_CSV}"
 
     echo "[DONE] ${run_tag} mse=${mse}, mae=${mae}"
 done
