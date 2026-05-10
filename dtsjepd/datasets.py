@@ -4,20 +4,34 @@ from torch.utils.data import DataLoader
 
 
 class TimeSeriesPatchDataset:
-    def __init__(self, series, series_split_size=320, patch_size=32, mask_ratio=0.7):
+    def __init__(
+        self,
+        series,
+        series_split_size=320,
+        patch_size=32,
+        mask_ratio=0.7,
+        stride=None,
+    ):
         self.series = series
         self.series_split_size = series_split_size
         self.patch_size = patch_size
         self.mask_ratio = mask_ratio
+        self.stride = stride or series_split_size
+        if self.stride <= 0:
+            raise ValueError("stride must be positive")
 
     def __len__(self):
-        return len(self.series) // self.series_split_size
+        if len(self.series) < self.series_split_size:
+            return 0
+        return (len(self.series) - self.series_split_size) // self.stride + 1
 
     def __getitem__(self, idx):
-        num_splits = len(self.series) // self.series_split_size
+        num_splits = len(self)
+        if num_splits == 0:
+            raise IndexError("Dataset contains no valid windows")
+        start = (idx % num_splits) * self.stride
         selected_series = self.series[
-            (idx % num_splits) * self.series_split_size : (idx % num_splits + 1)
-            * self.series_split_size
+            start : start + self.series_split_size
         ]
 
         num_patches = len(selected_series) // self.patch_size
@@ -110,28 +124,33 @@ def build_dataloaders(
     ratio_patches=10,
     patch_size=32,
     mask_ratio=0.7,
+    stride=None,
     num_workers=0,
 ):
     splits = load_series_splits(path_data, data_name, input_cols=input_cols)
     series_split_size = ratio_patches * patch_size
+    stride = stride or series_split_size
 
     train_dataset = TimeSeriesPatchDataset(
         splits["train"],
         series_split_size=series_split_size,
         patch_size=patch_size,
         mask_ratio=mask_ratio,
+        stride=stride,
     )
     val_dataset = TimeSeriesPatchDataset(
         splits["val"],
         series_split_size=series_split_size,
         patch_size=patch_size,
         mask_ratio=mask_ratio,
+        stride=stride,
     )
     test_dataset = TimeSeriesPatchDataset(
         splits["test"],
         series_split_size=series_split_size,
         patch_size=patch_size,
         mask_ratio=mask_ratio,
+        stride=stride,
     )
 
     train_loader = DataLoader(

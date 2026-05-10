@@ -41,9 +41,11 @@ def parse_args():
     parser.add_argument("--mask_ratio", type=float, default=0.7)
     parser.add_argument("--ratio_patches", type=int, default=10)
     parser.add_argument("--patch_size", type=int, default=32)
+    parser.add_argument("--stride", type=int, default=0)
     parser.add_argument("--checkpoint_save", type=int, default=5000)
     parser.add_argument("--eval_every", type=int, default=10)
     parser.add_argument("--disable_eval", action="store_true")
+    parser.add_argument("--clip_grad", type=float, default=10.0)
     parser.add_argument("--save_suffix", type=str, default="")
     parser.add_argument("--num_workers", type=int, default=0)
     parser.add_argument("--log_wandb", action="store_true")
@@ -191,6 +193,7 @@ def run_epoch(
         "pred_embedding_norm": 0.0,
         "target_embedding_norm": 0.0,
         "denoise_condition_norm": 0.0,
+        "grad_norm": 0.0,
     }
     num_batches = 0
 
@@ -220,6 +223,18 @@ def run_epoch(
 
             if is_train:
                 loss_total.backward()
+                grad_norm = 0.0
+                if args.clip_grad and args.clip_grad > 0:
+                    trainable_params = [
+                        param
+                        for group in optimizer.param_groups
+                        for param in group["params"]
+                        if param.grad is not None
+                    ]
+                    if trainable_params:
+                        grad_norm = torch.nn.utils.clip_grad_norm_(
+                            trainable_params, args.clip_grad
+                        ).item()
                 optimizer.step()
 
                 with torch.no_grad():
@@ -238,6 +253,8 @@ def run_epoch(
                 target_ema.detach().norm(dim=-1).mean().item()
             )
             totals["denoise_condition_norm"] += pred.detach().norm(dim=-1).mean().item()
+            if is_train:
+                totals["grad_norm"] += grad_norm
             num_batches += 1
 
     if num_batches == 0:
@@ -275,6 +292,7 @@ def main():
         ratio_patches=args.ratio_patches,
         patch_size=args.patch_size,
         mask_ratio=args.mask_ratio,
+        stride=args.stride if args.stride > 0 else None,
         num_workers=args.num_workers,
     )
 
@@ -306,6 +324,9 @@ def main():
         "num_channels": num_channels,
         "patch_size": patch_size,
         "num_patches": num_patches,
+        "stride": args.stride if args.stride > 0 else args.ratio_patches * args.patch_size,
+        "train_dataset_len": len(train_loader.dataset),
+        "val_dataset_len": len(val_loader.dataset),
         "seed": seed,
     }
     path_save = make_path_save(args, num_channels)
@@ -362,7 +383,10 @@ def main():
             "train/pred_embedding_norm": train_stats["pred_embedding_norm"],
             "train/target_embedding_norm": train_stats["target_embedding_norm"],
             "train/denoise_condition_norm": train_stats["denoise_condition_norm"],
+            "train/grad_norm": train_stats["grad_norm"],
             "data/num_channels": num_channels,
+            "data/train_dataset_len": len(train_loader.dataset),
+            "data/val_dataset_len": len(val_loader.dataset),
         }
 
         should_eval = (

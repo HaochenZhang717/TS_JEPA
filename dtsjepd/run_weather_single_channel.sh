@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # Sweep settings
-LRS=("5e-5" "1e-5" "1e-6")
+LRS=("1e-3" "1e-4" "5e-5" "1e-5" "1e-6")
 EMA_DECAYS=("0.995" "0.998" "0.999")
-LAMBDA_DENOISES=("0.01" "0.1")
+LAMBDA_DENOISES=("0.01" "0.05" "0.1 ”0")
 
 # Shared training settings
 DATA="weather"
@@ -13,19 +13,21 @@ BATCH_SIZE="32"
 NUM_EPOCHS="5001"
 RATIO_PATCHES="10"
 PATCH_SIZE="32"
-MASK_RATIO="0.7"
+STRIDE="1"
+MASK_RATIO="0.4"
 EVAL_EVERY="10"
 CHECKPOINT_SAVE="5000"
+CLIP_GRAD="1.0"
 
 ENC_EMBED_DIM="128"
-ENC_NHEAD="2"
-ENC_NUM_LAYERS="1"
+ENC_NHEAD="4"
+ENC_NUM_LAYERS="2"
 PRED_EMBED_DIM="128"
-PRED_NHEAD="2"
-PRED_NUM_LAYERS="1"
+PRED_NHEAD="4"
+PRED_NUM_LAYERS="2"
 
-DENOISE_HIDDEN_DIM="128"
-TIME_FREQUENCY_DIM="128"
+DENOISE_HIDDEN_DIM="64"
+TIME_FREQUENCY_DIM="64"
 P_MEAN="0.0"
 P_STD="1.0"
 T_EPS="1e-5"
@@ -50,9 +52,11 @@ for LR in "${LRS[@]}"; do
         --ema_momentum "${EMA}" \
         --ratio_patches "${RATIO_PATCHES}" \
         --patch_size "${PATCH_SIZE}" \
+        --stride "${STRIDE}" \
         --mask_ratio "${MASK_RATIO}" \
         --eval_every "${EVAL_EVERY}" \
         --checkpoint_save "${CHECKPOINT_SAVE}" \
+        --clip_grad "${CLIP_GRAD}" \
         --encoder_embed_dim "${ENC_EMBED_DIM}" \
         --encoder_nhead "${ENC_NHEAD}" \
         --encoder_num_layers "${ENC_NUM_LAYERS}" \
