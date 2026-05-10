@@ -9,6 +9,8 @@ set -euo pipefail
 #   bash run_downstream_finetune_grid.sh
 # Optional overrides:
 #   DATA=weather DOWNSTREAM_LR=1e-04 CHECKPOINT_TO_USE=5000 bash run_downstream_finetune_grid.sh
+#   EVAL_SCRIPT=eval_forecast_mine.py bash run_downstream_finetune_grid.sh
+#   PLOT_NUM_EXAMPLES=24 bash run_downstream_finetune_grid.sh
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TS="$(date +%Y%m%d_%H%M%S)"
@@ -20,11 +22,13 @@ mkdir -p "${PLOT_DIR}"
 DATA="${DATA:-weather}"
 BATCH_SIZE="${BATCH_SIZE:-32}"
 PRETRAIN_ENCODER_KERNEL_SIZE="${PRETRAIN_ENCODER_KERNEL_SIZE:-3}"
+EVAL_SCRIPT="${EVAL_SCRIPT:-eval_forecast_last_pred.py}"
 
 # Fixed downstream finetune params (no tuning).
 DOWNSTREAM_LR="${DOWNSTREAM_LR:-1e-04}"
 CHECKPOINT_TO_USE="${CHECKPOINT_TO_USE:-5000}"
 PLOT_NUM_STEPS="${PLOT_NUM_STEPS:-20}"
+PLOT_NUM_EXAMPLES="${PLOT_NUM_EXAMPLES:-12}"
 
 CKPT_DIR="${ROOT_DIR}/logs/output_model/${DATA}"
 if [[ ! -d "${CKPT_DIR}" ]]; then
@@ -81,13 +85,14 @@ for ckpt_path in "${CKPT_FILES[@]}"; do
     echo "======================================================"
 
     set +e
-    python "${ROOT_DIR}/eval_forecast_last_pred.py" \
+    python "${ROOT_DIR}/${EVAL_SCRIPT}" \
       --data "${DATA}" \
       --batch_size "${BATCH_SIZE}" \
       --lr "${DOWNSTREAM_LR}" \
       --checkpoint_path "${ckpt_path}" \
       --plot_path "${plot_file}" \
       --plot_num_steps "${PLOT_NUM_STEPS}" \
+      --plot_num_examples "${PLOT_NUM_EXAMPLES}" \
       --lr_pretrain "${lr_pretrain}" \
       --mask_ratio "${mask_ratio}" \
       --ema_pretrain "${ema_pretrain}" \

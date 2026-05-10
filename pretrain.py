@@ -32,8 +32,15 @@ def loss_pred(pred, target_ema):
     return loss
 
 
-def save_model(model, epoch):
-    save_dict = {"encoder": model.state_dict(), "epoch": epoch}
+def save_model(encoder, predictor, encoder_ema, optimizer, epoch, config):
+    save_dict = {
+        "encoder": encoder.state_dict(),
+        "predictor": predictor.state_dict(),
+        "encoder_ema": encoder_ema.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "config": config,
+        "epoch": epoch,
+    }
 
     try:
         path_name = path_save + "_epoch_" + str(epoch) + ".pt"
@@ -164,7 +171,7 @@ if __name__ == "__main__":
     total_loss, total_var_encoder, total_var_decoder = 0.0, 0.0, 0.0
 
     # Save Initial Model -- Useful to compare when evaluating
-    save_model(encoder, 0)
+    save_model(encoder, predictor, encoder_ema, optimizer, 0, config)
 
     # Training loop
     for epoch in range(config["num_epochs"]):
@@ -231,7 +238,7 @@ if __name__ == "__main__":
 
         # Save model's checkpoint
         if epoch % checkpoint_save == 0 and epoch != 0:
-            save_model(encoder, epoch)
+            save_model(encoder, predictor, encoder_ema, optimizer, epoch, config)
 
     if wandb_run is not None:
         wandb.finish()

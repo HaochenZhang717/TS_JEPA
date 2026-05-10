@@ -27,6 +27,7 @@ def prepare_args(config):
     parser.add_argument("--checkpoint_path", type=str, default="")
     parser.add_argument("--plot_path", type=str, default="")
     parser.add_argument("--plot_num_steps", type=int, default=20)
+    parser.add_argument("--plot_num_examples", type=int, default=12)
     parser.add_argument("--name_model", type=str, default="pre_train")
 
     parser.add_argument("--lr", type=float, default=config["lr"])
@@ -152,6 +153,7 @@ def prepare_args(config):
     config["checkpoint_path"] = args.checkpoint_path
     config["plot_path"] = args.plot_path
     config["plot_num_steps"] = args.plot_num_steps
+    config["plot_num_examples"] = args.plot_num_examples
 
     config["path_save"] = "./logs/output_model/" + args.data
 
