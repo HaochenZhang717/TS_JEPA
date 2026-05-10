@@ -103,7 +103,7 @@ def denoise_loss(head, clean_patches, condition, args):
 
 def make_path_save(args, num_channels):
     path = (
-        f"./logs/output_model/{args.data}/dtsjepd"
+        f"./logs/output_model_dtsjepd/{args.data}/dtsjepd"
         f"_lr_{args.lr}"
         f"_ema_momentum_{args.ema_momentum}"
         f"_mask_ratio_{args.mask_ratio}"
