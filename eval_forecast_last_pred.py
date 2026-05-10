@@ -40,6 +40,7 @@ if __name__ == "__main__":
 
     # Load device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("Using device: {}".format(device))
 
     # Init Encoder, Decoder, Optimizer
 
@@ -68,6 +69,8 @@ if __name__ == "__main__":
     )
 
     decoder = LinearDecoder(emb_dim=config["pretrain_encoder_embed_dim"], patch_size=32)
+    encoder = encoder.to(device)
+    decoder = decoder.to(device)
 
     # Load the pretrained model
     # path_name = "lr_" + str(config["lr_pretrain"]) \
@@ -107,7 +110,7 @@ if __name__ == "__main__":
     else:
         ckpt_to_load = config["path_save"] + path_name + ".pt"
 
-    name_loader = torch.load(ckpt_to_load, map_location=torch.device("cpu"))["encoder"]
+    name_loader = torch.load(ckpt_to_load, map_location=device)["encoder"]
     encoder.load_state_dict(name_loader)
     print("Model loaded from: {}".format(ckpt_to_load))
 
@@ -123,6 +126,8 @@ if __name__ == "__main__":
         decoder.train()
         total_loss = 0
         for context_patches, target_patch in loader:
+            context_patches = context_patches.to(device)
+            target_patch = target_patch.to(device)
             optimizer.zero_grad()
             encoded_patches = encoder(context_patches)
             summed_embedding = torch.sum(encoded_patches, dim=1)
@@ -155,12 +160,13 @@ if __name__ == "__main__":
             ]
             .reshape(num_patches, context)
             .unsqueeze(0)
+            .to(device)
         )
         target_value = loader.dataset.test_df[
             context * num_patches
             + step * context : context * num_patches
             + (step + 1) * context
-        ]
+        ].to(device)
 
         encoded_patches = encoder(current_context)
 
@@ -172,16 +178,18 @@ if __name__ == "__main__":
 
         # Compute the Loss
         val_mse = mse(
-            predicted_next_patch.flatten().detach().numpy(), target_value.numpy()
+            predicted_next_patch.flatten().detach().cpu().numpy(),
+            target_value.detach().cpu().numpy(),
         )
         val_mae = mae(
-            predicted_next_patch.flatten().detach().numpy(), target_value.numpy()
+            predicted_next_patch.flatten().detach().cpu().numpy(),
+            target_value.detach().cpu().numpy(),
         )
 
         l_val_mse.append(val_mse)
         l_val_mae.append(val_mae)
-        predictions.append(predicted_next_patch.flatten().detach().numpy())
-        targets.append(target_value.numpy())
+        predictions.append(predicted_next_patch.flatten().detach().cpu().numpy())
+        targets.append(target_value.detach().cpu().numpy())
 
     print("MSE Loss is: {}".format(np.mean(l_val_mse)))
     print("MAE Loss is: {}".format(np.mean(l_val_mae)))
