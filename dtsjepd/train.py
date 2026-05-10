@@ -215,7 +215,6 @@ def run_epoch(
             clean_masked = gather_masked_patches(patches, masks)
             loss_jepa = jepa_loss(pred, target_ema)
 
-            brea
             loss_denoise = denoise_loss(denoising_head, clean_masked, pred, args)
             loss_total = loss_jepa + args.lambda_denoise * loss_denoise
 
