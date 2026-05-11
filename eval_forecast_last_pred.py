@@ -150,9 +150,12 @@ if __name__ == "__main__":
     predictions = []
     targets = []
     contexts = []
+    naive_predictions = []
     total_diff = 0
     l_val_mse = []
     l_val_mae = []
+    l_naive_mse = []
+    l_naive_mae = []
 
     encoder.eval()
     decoder.eval()
@@ -183,19 +186,27 @@ if __name__ == "__main__":
 
             y_pred = predicted_next_patch.flatten().detach().cpu().numpy()
             y_true = target_value.detach().cpu().numpy()
+            y_naive = current_context[:, -1, :].flatten().detach().cpu().numpy()
 
             # Compute the Loss
             val_mse = mse(y_pred, y_true)
             val_mae = mae(y_pred, y_true)
+            naive_mse = mse(y_naive, y_true)
+            naive_mae = mae(y_naive, y_true)
 
             l_val_mse.append(val_mse)
             l_val_mae.append(val_mae)
+            l_naive_mse.append(naive_mse)
+            l_naive_mae.append(naive_mae)
             predictions.append(y_pred)
             targets.append(y_true)
             contexts.append(current_context.flatten().detach().cpu().numpy())
+            naive_predictions.append(y_naive)
 
     print("MSE Loss is: {}".format(np.mean(l_val_mse)))
     print("MAE Loss is: {}".format(np.mean(l_val_mae)))
+    print("Naive baseline MSE Loss is: {}".format(np.mean(l_naive_mse)))
+    print("Naive baseline MAE Loss is: {}".format(np.mean(l_naive_mae)))
 
     if config.get("plot_path", ""):
         plot_num_steps = min(config.get("plot_num_steps", 20), len(predictions))
