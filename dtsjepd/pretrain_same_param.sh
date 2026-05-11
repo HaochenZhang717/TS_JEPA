@@ -17,6 +17,7 @@ EMA_DECAYS=("0.995")
 
 DATA="weather"
 INPUT_COLS="OT"
+OUTPUT_DIR="./logs/output_model_dtsjepd_same_param"
 BATCH_SIZE="32"
 NUM_EPOCHS="5001"
 WARMUP_EPOCHS="0"
@@ -67,6 +68,7 @@ for LR in "${LRS[@]}"; do
       --mask_ratio "${MASK_RATIO}" \
       --eval_every "${EVAL_EVERY}" \
       --checkpoint_save "${CHECKPOINT_SAVE}" \
+      --output_dir "${OUTPUT_DIR}" \
       --clip_grad "${CLIP_GRAD}" \
       --encoder_embed_dim "${ENC_EMBED_DIM}" \
       --encoder_nhead "${ENC_NHEAD}" \

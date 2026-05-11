@@ -44,6 +44,7 @@ def parse_args():
     parser.add_argument("--patch_size", type=int, default=32)
     parser.add_argument("--stride", type=int, default=0)
     parser.add_argument("--checkpoint_save", type=int, default=5000)
+    parser.add_argument("--output_dir", type=str, default="./logs/output_model_dtsjepd")
     parser.add_argument("--eval_every", type=int, default=10)
     parser.add_argument("--disable_eval", action="store_true")
     parser.add_argument("--clip_grad", type=float, default=10.0)
@@ -103,7 +104,7 @@ def denoise_loss(head, clean_patches, condition, args):
 
 def make_path_save(args, num_channels):
     path = (
-        f"./logs/output_model_dtsjepd/{args.data}/dtsjepd"
+        f"{args.output_dir}/{args.data}/dtsjepd"
         f"_lr_{args.lr}"
         f"_ema_momentum_{args.ema_momentum}"
         f"_mask_ratio_{args.mask_ratio}"
