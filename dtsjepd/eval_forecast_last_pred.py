@@ -65,7 +65,7 @@ def parse_args():
     parser.add_argument("--data_path", type=str, default="")
     parser.add_argument("--input_cols", type=str, default="auto")
     parser.add_argument("--batch_size", type=int, default=256)
-    parser.add_argument("--num_epochs", type=int, default=200)
+    parser.add_argument("--num_epochs", type=int, default=500)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight_decay", type=float, default=1e-4)
     parser.add_argument("--num_workers", type=int, default=0)

@@ -16,9 +16,9 @@ INPUT_COLS="OT"
 DATA_PATH="./data/${DATA}/${DATA}.csv"
 
 BATCH_SIZE="256"
-NUM_EPOCHS="200"
+NUM_EPOCHS="500"
 LR="1e-3"
-WEIGHT_DECAY="1e-4"
+WEIGHT_DECAY="0"
 NUM_WORKERS="0"
 SEED="42"
 MAX_JOBS="0"      # 0 means run all discovered checkpoints
