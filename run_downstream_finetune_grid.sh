@@ -105,7 +105,7 @@ for ckpt_path in "${CKPT_FILES[@]}"; do
       --pretrain_decoder_embed_dim "${dec_dim}" \
       --pretrain_decoder_nhead "${dec_head}" \
       --pretrain_decoder_num_layers "${dec_layer}" \
-      > "${log_file}" 2>&1
+      2>&1 | tee "${log_file}"
     status=$?
     set -e
 
