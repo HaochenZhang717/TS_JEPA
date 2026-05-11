@@ -213,6 +213,8 @@ def main():
         context_patches=context_patches,
         device=device,
     )
+    print(f"Test MSE is: {test_mse}")
+    print(f"Test MAE is: {test_mae}")
 
     result = {
         "checkpoint": args.checkpoint,
@@ -231,6 +233,13 @@ def main():
         "test_steps": test_steps,
         "test_mse": test_mse,
         "test_mae": test_mae,
+        "metrics": {
+            "test": {
+                "mse": test_mse,
+                "mae": test_mae,
+                "steps": test_steps,
+            }
+        },
         "history": history,
     }
 
