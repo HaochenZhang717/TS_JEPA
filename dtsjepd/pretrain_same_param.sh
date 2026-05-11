@@ -44,6 +44,7 @@ P_STD="1.0"
 T_EPS="1e-5"
 NOISE_SCALE="1.0"
 
+
 WANDB_PROJECT="TS_D_JEPA"
 
 for LR in "${LRS[@]}"; do
