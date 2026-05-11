@@ -37,6 +37,7 @@ export NCCL_DEBUG=INFO
 : "${METRIC_ORIG_SCALE:=1}"
 : "${SEED:=42}"
 : "${RUN_TAG:=pred_eval_${SLURM_JOB_ID:-manual}}"
+: "${SAVE_JSON_DIR:=./logs/eval_prediction/slurm}"
 
 echo "============================================================"
 echo "DTS-JEPD prediction eval Slurm job"
@@ -68,6 +69,10 @@ CMD=(
 
 if [[ "${METRIC_ORIG_SCALE}" == "1" ]]; then
   CMD+=(--metric_on_original_scale)
+fi
+
+if [[ -n "${SAVE_JSON_DIR}" ]]; then
+  CMD+=(--save_json_dir "${SAVE_JSON_DIR}")
 fi
 
 "${CMD[@]}"

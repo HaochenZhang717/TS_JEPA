@@ -13,9 +13,9 @@ DATA="weather"
 INPUT_COLS="OT"
 DATA_PATH="./data/${DATA}/${DATA}.csv"
 
-BATCH_SIZE="64"
-NUM_EPOCHS="5"
-EVAL_LR="1e-3"
+BATCH_SIZE="128"
+NUM_EPOCHS="50"
+EVAL_LR="5e-4"
 WEIGHT_DECAY="1e-4"
 STRIDE="4"
 NUM_WORKERS="0"
@@ -24,6 +24,7 @@ DECODER_HIDDEN_DIM="256"
 METRIC_ORIG_SCALE="0"   # 0: normalized scale, 1: original scale
 SEED="42"
 MAX_JOBS="0"             # 0 means run all discovered checkpoints
+SAVE_JSON_DIR="./logs/eval_prediction/local"
 
 source ~/.zshrc >/dev/null 2>&1 || true
 CONDA_BIN="/playpen-shared/haochenz/miniconda3/bin/conda"
@@ -76,6 +77,10 @@ for CHECKPOINT in "${CKPTS[@]}"; do
 
   if [[ "${METRIC_ORIG_SCALE}" == "1" ]]; then
     CMD+=(--metric_on_original_scale)
+  fi
+
+  if [[ -n "${SAVE_JSON_DIR}" ]]; then
+    CMD+=(--save_json_dir "${SAVE_JSON_DIR}")
   fi
 
   "${CMD[@]}"

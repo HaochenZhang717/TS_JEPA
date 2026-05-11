@@ -2,6 +2,7 @@ import argparse
 import json
 import random
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -101,6 +102,8 @@ def parse_args():
     parser.add_argument("--decoder", type=str, default="mlp", choices=["mlp", "cnn_mlp"])
     parser.add_argument("--decoder_hidden_dim", type=int, default=256)
     parser.add_argument("--metric_on_original_scale", action="store_true")
+    parser.add_argument("--save_json_path", type=str, default="")
+    parser.add_argument("--save_json_dir", type=str, default="")
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 
@@ -184,9 +187,9 @@ def compute_metrics(y_pred, y_true):
 
 def evaluate(loader, encoder, predictor, decoder, device, mean_t, std_t, metric_on_original_scale):
     decoder.eval()
-    total_mae = 0.0
-    total_mse = 0.0
-    total_batches = 0
+    total_abs = 0.0
+    total_sq = 0.0
+    total_elems = 0
 
     with torch.no_grad():
         for x_context, y_target in loader:
@@ -199,14 +202,14 @@ def evaluate(loader, encoder, predictor, decoder, device, mean_t, std_t, metric_
                 y_pred = y_pred * std_t + mean_t
                 y_target = y_target * std_t + mean_t
 
-            mae, mse = compute_metrics(y_pred, y_target)
-            total_mae += mae
-            total_mse += mse
-            total_batches += 1
+            diff = y_pred - y_target
+            total_abs += torch.sum(torch.abs(diff)).item()
+            total_sq += torch.sum(diff ** 2).item()
+            total_elems += diff.numel()
 
-    if total_batches == 0:
+    if total_elems == 0:
         raise ValueError("Evaluation loader has zero batches.")
-    return total_mae / total_batches, total_mse / total_batches
+    return total_abs / total_elems, total_sq / total_elems
 
 
 def main():
@@ -266,11 +269,12 @@ def main():
 
     best_val_mae = float("inf")
     best_state = None
+    history = []
 
     for epoch in range(1, args.num_epochs + 1):
         decoder.train()
         epoch_loss = 0.0
-        n_batches = 0
+        n_samples = 0
 
         for x_context, y_target in train_loader:
             x_context = x_context.to(device)
@@ -284,12 +288,13 @@ def main():
             loss.backward()
             optimizer.step()
 
-            epoch_loss += loss.item()
-            n_batches += 1
+            batch_size = x_context.size(0)
+            epoch_loss += loss.item() * batch_size
+            n_samples += batch_size
 
-        if n_batches == 0:
+        if n_samples == 0:
             raise ValueError("Training loader has zero batches.")
-        train_loss = epoch_loss / n_batches
+        train_loss = epoch_loss / n_samples
 
         val_mae, val_mse = evaluate(
             val_loader,
@@ -303,6 +308,14 @@ def main():
         )
         print(
             f"[Epoch {epoch:03d}] train_mse={train_loss:.6f} val_mae={val_mae:.6f} val_mse={val_mse:.6f}"
+        )
+        history.append(
+            {
+                "epoch": epoch,
+                "train_mse": train_loss,
+                "val_mae": val_mae,
+                "val_mse": val_mse,
+            }
         )
 
         if val_mae < best_val_mae:
@@ -349,8 +362,30 @@ def main():
         "patch_size": patch_size,
         "num_patches": num_patches,
         "selected_cols": col_order,
+        "train_windows": len(train_loader.dataset),
+        "val_windows": len(val_loader.dataset),
+        "test_windows": len(test_loader.dataset),
+        "history": history,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    save_json_path = args.save_json_path.strip()
+    save_json_dir = args.save_json_dir.strip()
+    if save_json_path:
+        out_path = Path(save_json_path)
+    elif save_json_dir:
+        ckpt_stem = Path(args.checkpoint).stem
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_name = f"{ckpt_stem}_decoder-{args.decoder}_seed-{args.seed}_{ts}.json"
+        out_path = Path(save_json_dir) / file_name
+    else:
+        out_path = None
+
+    if out_path is not None:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with out_path.open("w", encoding="utf-8") as f:
+            json.dump(result, f, ensure_ascii=False, indent=2)
+        print(f"Saved eval result JSON to: {out_path}")
 
 
 if __name__ == "__main__":
