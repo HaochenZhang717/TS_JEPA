@@ -140,8 +140,8 @@ if __name__ == "__main__":
             optimizer.step()
 
             total_loss += loss / config["batch_size"]
-        if epoch % 10 == 0:
-            print("Epoch: {} - Total loss: {}".format(epoch, total_loss))
+        # if epoch % 10 == 0:
+        print("Epoch: {} - Total loss: {}".format(epoch, total_loss))
 
     # We test the model on the last prediction
     # We define the number of steps we will have
