@@ -146,6 +146,37 @@ def evaluate_test(encoder, decoder, test_series, patch_size, context_patches, de
     return float(np.mean(mse_list)), float(np.mean(mae_list)), num_steps
 
 
+def compute_train_target_mean(train_dataset):
+    targets = []
+    for _, target_patch in train_dataset:
+        targets.append(target_patch)
+    if not targets:
+        raise ValueError("Training dataset has no targets for mean baseline.")
+    return torch.stack(targets, dim=0).mean(dim=0)
+
+
+def evaluate_mean_baseline(mean_patch, test_series, patch_size, context_patches, device):
+    num_steps = max(0, (len(test_series) - context_patches * patch_size) // patch_size)
+    if num_steps == 0:
+        raise ValueError("Test split too short for requested context/patch settings.")
+
+    mean_patch = mean_patch.to(device).view(1, patch_size, -1)
+    mse_list = []
+    mae_list = []
+
+    with torch.no_grad():
+        for step in range(num_steps):
+            target_start = (step + context_patches) * patch_size
+            target_end = target_start + patch_size
+            target_patch = test_series[target_start:target_end].view(1, patch_size, -1).to(device)
+
+            diff = mean_patch - target_patch
+            mse_list.append(torch.mean(diff ** 2).item())
+            mae_list.append(torch.mean(torch.abs(diff)).item())
+
+    return float(np.mean(mse_list)), float(np.mean(mae_list)), num_steps
+
+
 def main():
     args = parse_args()
     set_seed(args.seed)
@@ -213,8 +244,18 @@ def main():
         context_patches=context_patches,
         device=device,
     )
+    mean_patch = compute_train_target_mean(train_dataset)
+    mean_mse, mean_mae, mean_steps = evaluate_mean_baseline(
+        mean_patch,
+        splits["test"],
+        patch_size=patch_size,
+        context_patches=context_patches,
+        device=device,
+    )
     print(f"Test MSE is: {test_mse}")
     print(f"Test MAE is: {test_mae}")
+    print(f"Mean baseline MSE is: {mean_mse}")
+    print(f"Mean baseline MAE is: {mean_mae}")
 
     result = {
         "checkpoint": args.checkpoint,
@@ -233,11 +274,18 @@ def main():
         "test_steps": test_steps,
         "test_mse": test_mse,
         "test_mae": test_mae,
+        "mean_baseline_mse": mean_mse,
+        "mean_baseline_mae": mean_mae,
         "metrics": {
             "test": {
                 "mse": test_mse,
                 "mae": test_mae,
                 "steps": test_steps,
+            },
+            "mean_baseline": {
+                "mse": mean_mse,
+                "mae": mean_mae,
+                "steps": mean_steps,
             }
         },
         "history": history,
