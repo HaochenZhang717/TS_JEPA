@@ -6,7 +6,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Checkpoint discovery settings
 CKPT_ROOT="/mnt/unites8/playpen/haochenz/TS_JEPA/logs/output_model_dtsjepd/weather"
-CKPT_GLOB="*_epoch_5000.pt
+CKPT_GLOB="*_epoch_5000.pt"
 
 # Shared eval settings
 DATA="weather"
