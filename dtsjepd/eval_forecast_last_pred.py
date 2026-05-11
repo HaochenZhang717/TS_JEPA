@@ -177,6 +177,33 @@ def evaluate_mean_baseline(mean_patch, test_series, patch_size, context_patches,
     return float(np.mean(mse_list)), float(np.mean(mae_list)), num_steps
 
 
+def evaluate_naive_baseline(test_series, patch_size, context_patches, device):
+    """Persistence baseline: predict the next patch with the last context patch."""
+    num_steps = max(0, (len(test_series) - context_patches * patch_size) // patch_size)
+    if num_steps == 0:
+        raise ValueError("Test split too short for requested context/patch settings.")
+
+    mse_list = []
+    mae_list = []
+
+    with torch.no_grad():
+        for step in range(num_steps):
+            context_start = step * patch_size
+            last_context_start = context_start + (context_patches - 1) * patch_size
+            last_context_end = last_context_start + patch_size
+            target_start = context_start + context_patches * patch_size
+            target_end = target_start + patch_size
+
+            pred_patch = test_series[last_context_start:last_context_end].view(1, patch_size, -1).to(device)
+            target_patch = test_series[target_start:target_end].view(1, patch_size, -1).to(device)
+
+            diff = pred_patch - target_patch
+            mse_list.append(torch.mean(diff ** 2).item())
+            mae_list.append(torch.mean(torch.abs(diff)).item())
+
+    return float(np.mean(mse_list)), float(np.mean(mae_list)), num_steps
+
+
 def main():
     args = parse_args()
     set_seed(args.seed)
@@ -252,10 +279,18 @@ def main():
         context_patches=context_patches,
         device=device,
     )
+    naive_mse, naive_mae, naive_steps = evaluate_naive_baseline(
+        splits["test"],
+        patch_size=patch_size,
+        context_patches=context_patches,
+        device=device,
+    )
     print(f"Test MSE is: {test_mse}")
     print(f"Test MAE is: {test_mae}")
     print(f"Mean baseline MSE is: {mean_mse}")
     print(f"Mean baseline MAE is: {mean_mae}")
+    print(f"Naive baseline MSE is: {naive_mse}")
+    print(f"Naive baseline MAE is: {naive_mae}")
 
     result = {
         "checkpoint": args.checkpoint,
@@ -276,6 +311,8 @@ def main():
         "test_mae": test_mae,
         "mean_baseline_mse": mean_mse,
         "mean_baseline_mae": mean_mae,
+        "naive_baseline_mse": naive_mse,
+        "naive_baseline_mae": naive_mae,
         "metrics": {
             "test": {
                 "mse": test_mse,
@@ -286,6 +323,11 @@ def main():
                 "mse": mean_mse,
                 "mae": mean_mae,
                 "steps": mean_steps,
+            },
+            "naive_baseline": {
+                "mse": naive_mse,
+                "mae": naive_mae,
+                "steps": naive_steps,
             }
         },
         "history": history,
