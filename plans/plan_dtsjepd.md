@@ -518,6 +518,51 @@ data
 num_channels
 lr
 batch size
+
+## Evaluation Plan (Frozen Encoder/ Predictor + Lightweight Decoder)
+
+After parameter sweep pretraining is finished, run a downstream evaluation that probes whether the learned representation can recover the raw value of the 10th patch from the first 9 patches.
+
+Task definition:
+
+```text
+input patches:   x_1 ... x_9
+frozen backbone: encoder + predictor
+target:          raw variable value of x_10
+```
+
+Evaluation pipeline:
+
+1. Feed the first 9 patches into the frozen encoder.
+2. Use the frozen predictor to produce the predicted embedding for patch 10.
+3. Feed this predicted embedding into a small decoder head.
+4. Train only the decoder head to predict raw values of patch 10.
+
+Frozen/trainable policy:
+
+```text
+encoder:   frozen
+predictor: frozen
+decoder:   trainable (the only tuned module)
+```
+
+Decoder options:
+
+```text
+Option A: 2-layer MLP
+Option B: CNN + MLP
+```
+
+The decoder should stay lightweight so the result primarily reflects representation quality rather than downstream model capacity.
+
+Metrics:
+
+```text
+MAE
+MSE
+```
+
+Report both metrics on validation and test splits.
 ema momentum
 mask ratio
 lambda_denoise
